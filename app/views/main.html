@@ -1,0 +1,35 @@
+<div class="header">
+    <ul class="nav nav-pills pull-right">
+        <li class="active"><a ng-href="#">Home</a>
+        </li>
+        <li><a ng-href="#">About</a>
+        </li>
+        <li><a ng-href="#">Contact</a>
+        </li>
+    </ul>
+    <h3 class="text-muted">PhotoUpload</h3>
+</div>
+
+<article>
+    <div id="holder">
+    </div>
+    <p id="upload" class="hidden">
+        <label>Drag & drop not supported, but you can still upload via this input field:
+            <br>
+            <input type="file">
+        </label>
+    </p>
+    <p id="filereader">File API & FileReader API not supported</p>
+    <p id="formdata">XHR2's FormData is not supported</p>
+    <p id="progress">XHR2's upload progress isn't supported</p>
+    <p>Upload progress:
+        <progress id="uploadprogress" min="0" max="100" value="0">0</progress>
+    </p>
+    <p>Drag an image from your desktop on to the drop zone above to see the browser both render the preview, but also upload automatically to this server.</p>
+</article>
+<div id="added" class="row">
+</div>
+
+<div class="footer">
+    <p><span class="glyphicon glyphicon-heart"></span> from the Yeoman team</p>
+</div>
