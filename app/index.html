@@ -22,24 +22,26 @@
     <!--[if lt IE 10]>
             <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
+        <div id="error_messages" style="display:none; color:red" ></div>
+<img src="http://placekitten.com/g/320/261" id="photo" alt="photo">
     <div id="playground" style="width: 300px; height: 300px; ">
         <div id="upload_image">
             <div id="dropTarget" style="width: 300px; height: 300px; border: 5px #ccc dashed; padding: 10px;">Drop Image file here
                 <br />
                 <br />OR
-                <br/>
-                <br/>
+                <br />
+                <br />
 
-                <form enctype="multipart/form-data" method="post" action="upload.php">
+                <!-- <form enctype="multipart/form&#45;data" method="post" action="upload.php"> -->
                     <div class="row">
                         <label for="fileToUpload">Select Files to Upload</label>
                         <br />
                         <input type="file" name="filesToUpload" id="filesToUpload" />
                     </div>
                     <div class="row">
-                        <input type="submit" value="Upload" />
+                        <input type="button" value="Upload" />
                     </div>
-                </form>
+                <!-- </form> -->
                 <br />
                 <br />OR
                 <br />
@@ -51,7 +53,6 @@
             <output id="filesInfo"></output>
         </div>
         <div id="capture">
-
             <video id="video"></video>
             <button id="startbutton">Take photo</button>
             <canvas id="canvas"></canvas>
