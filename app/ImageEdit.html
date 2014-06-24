@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image E example</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="/scripts/resizable.js"></script>
+    <style type="text/css">
+    .resizecontainer {
+      padding: 10px;
+      position: absolute;
+      z-index: 50;
+    }
+    .resizecontainer .resizer {
+      background-color: #fff;
+      border: 1px solid #000;
+      height: 8px;
+      overflow: hidden;
+      width: 8px;
+    }
+    .transparent {
+      z-index: 10;
+      position: absolute;
+      background-color: #fff;
+      filter: alpha(opacity=50);
+      opacity: .5;
+    }
+    .capturecontainer {
+      cursor: move;
+      position: absolute;
+      z-index: 30;
+      background-color: #fff;
+      filter: alpha(opacity=0);
+      opacity: 0;
+    }
+    .outercapturecontainer {
+      border: 1px solid rgba(0,0,0,0.6);
+      position: absolute;
+      z-index: 20;
+    }
+    </style>
+</head>
+<body onload="loadHandler()">
+  
+  <div id="editImageContainer" style="position:relative;height:640px;width:640px;display:inline-block" onmousedown="" onmouseup="">
+   
+    <canvas id="actualImageCanvas" width="640" height="640" style="position:absolute;">This browser or document mode doesn't support canvas</canvas>
+    <div id="capturedImageContainer" style="width: 640px; height: 640px; left: 0px; top: 0px; position: absolute;">
+      <div class="capturecontainer" style="top: 45px; left: 138px; width: 278px; height: 278px;"></div>
+
+      <div class="resizecontainer" id="topLeftResizer" style="cursor: nw-resize; left: 123px; top: 30px;">
+          <div class="resizer"></div>
+      </div>
+      <div class="resizecontainer" id="topRightResizer" style="cursor: ne-resize; left: 401px; top: 30px;">
+          <div class="resizer"></div>
+      </div>
+      <div class="resizecontainer" id="bottomRightResizer" style="cursor: se-resize; left: 401px; top: 308px;">
+          <div class="resizer"></div>
+      </div>
+      <div class="resizecontainer" id="bottomLeftResizer" style="cursor: sw-resize; left: 123px; top: 308px;">
+          <div class="resizer"></div>
+      </div>
+      <div>
+          <div id="topTransparent" class="transparent" style="width: 640px; top: 0px; left: 0px; height: 45px;"></div>
+          <div id="rightTransparent" class="transparent" style="top: 45px; left: 416px; width: 224px; height: 278px;"></div>
+          <div id="bottomTransparent" class="transparent" style="left: 0px; width: 640px; top: 323px; height: 317px;"></div>
+          <div id="leftTransparent" class="transparent" style="left: 0px; top: 45px; width: 138px; height: 278px;"></div>
+      </div>
+    <div class="outercapturecontainer" style="top: 44px; left: 137px; width: 278px; height: 278px;"></div>
+    </div>
+  </div>
+
+  <div>
+    <button onclick="cropImage(event)" style="display:block">Crop Image</button>
+    <canvas id="MyCanvas" width="640" height="640">This browser or document mode doesn't support canvas</canvas>
+  </div>
+
+  <script>
+
+   function putImage() {
+      var context = document.getElementById('actualImageCanvas').getContext("2d");
+      var img = new Image();
+      img.onload = function () {
+        context.height = "640px";
+        context.width = "640px";
+        context.drawImage(img, 0, 0,img.width,img.height,0,0,640,640);
+      }
+      img.src = "/images/tree.jpg";
+    }
+
+    function cropImage(eventObject){
+      var actualImage = document.getElementById("actualImageCanvas");
+      var myCanvas = document.getElementById("MyCanvas");
+      var ctx = myCanvas.getContext("2d");
+      var x = parseInt($(".capturecontainer").css("left"));
+      var y = parseInt($(".capturecontainer").css("top"));
+      var width = parseInt($(".capturecontainer").css("width"));
+      var height = parseInt($(".capturecontainer").css("height"));
+      ctx.drawImage(actualImage,x,y,width,height,0,0,width,height);
+    }
+
+  function loadHandler( eventObject ){
+
+    $('.capturecontainer').bind('mousedown', getStartMove);
+    $('.resizecontainer').bind('mousedown', getStartResize);
+    
+    putImage();
+  }
+  function getStartMove(eventObject){
+        var movable = eventObject.target;
+        movable.status = "STARTMOVE";
+        if ( movable.__moveIsActive ) return; // only proceed on LEFTBUTTON mouse events or touch events
+        eventObject.stopPropagation();
+        eventObject.preventDefault();
+
+        movable.__moveCount = 0;
+        getOriginalDimensionsInPixels(movable);
+        
+        movable.__moveStartX  = eventObject.screenX;
+        movable.__moveStartY  = eventObject.screenY;
+
+        //Calculate boundaries for the movable object
+        movable.__minDiffX = -(movable.__orgLeft);
+        movable.__maxDiffX = Math.max(movable.__minDiffX,movable.__orgRight);
+
+        movable.__minDiffY =  -(movable.__orgTop);
+        movable.__maxDiffY = Math.max(movable.__minDiffY,movable.__orgBottom);
+
+        $( '.capturecontainer' ).on( "mousemove",  getMover);
+        $( '.capturecontainer' ).on( "mouseup",  getStopMove);
+
+        movable.__moveIsActive = true;
+  }
+ 
+
+  function getOriginalDimensionsInPixels(obj){
+    var moveParent = getMoveParent(obj);
+    var offsets = $(obj).offset()
+ 
+    obj.__orgLeft = offsets.left;
+    obj.__orgTop = offsets.top;
+ 
+    obj.__orgWidth = obj.offsetWidth;
+    obj.__orgHeight = obj.offsetHeight;
+    obj.__orgRight = Math.max(moveParent.clientWidth, moveParent.scrollWidth) - obj.__orgLeft - obj.__orgWidth;
+    obj.__orgBottom = Math.max(moveParent.clientHeight, moveParent.scrollHeight) - obj.__orgTop - obj.__orgHeight;
+    obj.__newLeft = obj.__orgLeft;
+    obj.__newTop = obj.__orgTop;
+  }
+
+  function getMoveParent(movable){
+    if ( ! movable.__moveParent )
+    {
+      // Get the moveParent object
+      var moveParent = movable.moveParent;  // Can be undefined or pointer to existing element or string id of existing element;
+      if ( typeof(moveParent) == "string" )
+      {
+        // Get the corresponding HTML element;
+        moveParent = movable.ownerDocument.getElementById(moveParent);
+      }
+      if ( ! moveParent ) moveParent = movable.offsetParent ? movable.offsetParent : movable.ownerDocument.body;
+      movable.__moveParent = moveParent;
+    }
+    return movable.__moveParent;
+  }
+
+  function getMover(eventObject){
+    var movable = this;
+
+    eventObject.stopPropagation();
+    eventObject.preventDefault();
+
+    if ( ++movable.__moveCount > 1) //Ignore 1st move event for accidental: onmousedown + onmousemove + onmouseup
+    {
+      movable.status = "ONMOVE";
+     
+      var sX = eventObject.screenX;
+      var sY = eventObject.screenY;
+   
+      var diffX = sX - movable.__moveStartX;
+      var diffY = sY - movable.__moveStartY;
+
+      // Avoid crossing limits
+      diffX = Math.max(diffX, movable.__minDiffX); 
+      diffX = Math.min(diffX, movable.__maxDiffX);
+      diffY = Math.max(diffY, movable.__minDiffY);
+      diffY = Math.min(diffY, movable.__maxDiffY);
+      
+      var newLeft = movable.__orgLeft + diffX;
+      var newTop = movable.__orgTop + diffY;
+
+      if ( movable.__newLeft != newLeft )
+      {
+        movable.__newLeft = newLeft;
+        movable.style.left = newLeft + "px";
+        $(".outercapturecontainer").css("left", newLeft - 1 + "px");
+        $("#leftTransparent").css("width", newLeft + "px");
+        var parentWidth = parseInt($("#rightTransparent").parent().css("width"));
+        $("#rightTransparent").css("width", parentWidth - (newLeft + parseInt($(movable).css("width"))) + "px");
+        $("#rightTransparent").css("left", newLeft + parseInt($(movable).css("width")) + "px");
+      }
+      if (  movable.__newTop != newTop )
+      {
+        movable.__newTop = newTop;
+        movable.style.top = newTop + "px";
+        $(".outercapturecontainer").css("top", newTop - 1 + "px");
+        $("#topTransparent").css("height", newTop + "px");
+        $("#bottomTransparent").css("top", newTop + parseInt($(movable).css("height")) + "px");
+        var parentHeight = parseInt($("#capturedImageContainer").parent().css("height"));
+        $("#bottomTransparent").css("height", parentHeight - ( newTop + parseInt($(movable).css("height")) ) + "px");
+        $("#leftTransparent").css("top", newTop + "px");
+        $("#rightTransparent").css("top", newTop + "px");
+      }
+
+      $("#topLeftResizer").css("left", parseInt($(movable).css("left")) - 15 + "px");
+      $("#topLeftResizer").css("top", parseInt($(movable).css("top")) - 15 + "px");
+
+      $("#topRightResizer").css("left", parseInt($(movable).css("width")) + parseInt($("#topLeftResizer").css("left")) + "px")
+      $("#topRightResizer").css("top", parseInt($(movable).css("top")) - 15 + "px");
+
+      $("#bottomRightResizer").css("left", parseInt($(movable).css("width")) + parseInt($("#topLeftResizer").css("left")) + "px")
+      $("#bottomRightResizer").css("top", parseInt($("#topLeftResizer").css("top")) + parseInt($(movable).css("height")) + "px");
+
+      $("#bottomLeftResizer").css("left", parseInt($(movable).css("left")) - 15 + "px");
+      $("#bottomLeftResizer").css("top", parseInt($("#topLeftResizer").css("top")) + parseInt($(movable).css("height")) + "px");
+
+    }
+  }
+
+  function getStopMove(eventObject){
+    var movable = this;
+    if ( movable.__moveIsActive )
+    {
+      $( '.capturecontainer' ).off( "mousemove",  getMover);
+      if ( eventObject )
+      {
+        eventObject.stopPropagation();
+        eventObject.preventDefault();
+      }
+      movable.__moveIsActive = false;
+      movable.status = "STOPMOVE";
+    }
+  }
+  </script>
+</body>
+</html> 
